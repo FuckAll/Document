@@ -185,3 +185,143 @@ func classifier(items ...interface{}) {
 }
 ```
 4. 如何判断结构体是否实现了某些接口
+暂时没有好的方法。
+
+5.使用方法集与接口
+```go
+package main
+
+import (
+	"fmt"
+)
+
+type List []int
+//type List struct {}
+
+func (l List) Len() int {
+	return len(l)
+}
+
+func (l *List) Append(val int) {
+	*l = append(*l, val)
+}
+
+type Appender interface {
+	Append(int)
+}
+
+func CountInto(a Appender, start, end int) {
+	for i := start; i <= end; i++ {
+		a.Append(i)
+	}
+}
+
+type Lener interface {
+	Len() int
+}
+
+func LongEnough(l Lener) bool {
+	return l.Len() * 10 > 42
+}
+func main() {
+	var lst List
+	if LongEnough(lst){
+		fmt.Println("lst is long enough\n")
+	}
+	plst := new(List)
+	CountInto(plst,1,10)
+	if LongEnough(plst){
+		fmt.Println("plst is long enough")
+	}
+
+}
+```
+说明：如果lst上直接调用CountInto时会导致编译的错误，因为CountInto需要的是一个Appender接口，但是Appernder接口是定义*List上面的。但是plst是可以调用LongEnough，Go是会指针自动解除引用的。
+总结：
+指针方法可以通过指针调用
+值方法可以通过值调用
+接受者是值的方法可以通过指针的调用，因为指针是会被自动解除应用的
+接受者如果指针的方法不可以通过值调用，因为存储在接口中的值是没有地址的。
+
+6. 创建一个通用类型说这包含不同类型变量的数组
+思路：就是通过空接口的方式，因为空接口被任意的类型都实现了。
+```go
+type Element interface{}
+type Vector struct {
+	a []Element
+}
+
+func (p *Vector) At(i int) Element {
+	return p.a[i]
+}
+func (p *Vector) Set(i int, e Element) {
+	p.a[i] = e
+}
+func main() {
+	b:=[]Element{1,2}//这里的数据类型可以是任意的,也可以同时存在不一样的数据类型。
+	a := Vector{b}
+	a.Set(1,10)//修改的数据类型也可以是任意的。
+	fmt.Println(a.At(1))
+
+}
+```
+
+7.接口的提取
+什么是接口的提取，其实就是在不需要动旧接口的前提下增加一些新的接口，以便能够完善一下先前没有想到的一些抽象：
+例如：
+```go
+package main
+
+import "fmt"
+
+type Shaper interface {
+	Area() float32
+}
+
+type TopologicalGenus interface {
+	Rank() int
+}
+
+type Square struct {
+	side float32
+}
+
+func (sq *Square) Area() float32 {
+	return sq.side * sq.side
+}
+
+func (sq *Square) Rank() int {
+	return 1
+}
+
+type Rectangle struct {
+	length, width float32
+}
+
+func (r Rectangle) Area() float32 {
+	return r.length * r.width
+}
+
+func (r Rectangle) Rank() int {
+	return 2
+}
+
+func main() {
+	r := Rectangle{5, 3} // Area() of Rectangle needs a value
+	q := &Square{5}      // Area() of Square needs a pointer
+	shapes := []Shaper{r, q}
+	fmt.Println("Looping through shapes for area ...")
+	for n, _ := range shapes {
+		fmt.Println("Shape details: ", shapes[n])
+		fmt.Println("Area of this shape is: ", shapes[n].Area())
+	}
+	topgen := []TopologicalGenus{r, q}
+	fmt.Println("Looping through topgen for rank ...")
+	for n, _ := range topgen {
+		fmt.Println("Shape details: ", topgen[n])
+		fmt.Println("Topological Genus of this shape is: ", topgen[n].Rank())
+	}
+}
+```
+8. 如何显示的表明某个类型实现了某个接口
+实现方法：在接口的方法中添加需要描述的方法，来强制显示的表明实现了接口。
