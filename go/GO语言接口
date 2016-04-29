@@ -1,0 +1,187 @@
+---
+title: GO语言接口
+tags: Go
+grammar_cjkRuby: true
+---
+
+# Go语言接口
+1. Go语言数据结构的核心是接口。Go语言中接口是一些方法的集合，他指定了对象的行为。
+```go
+package main
+import "fmt"
+
+type Shaper interface {
+    Area() float32
+}
+
+type Square struct {
+    side float32
+}
+
+func (sq *Square) Area() float32 {
+    return sq.side * sq.side
+}
+type Rectangle struct {
+	length, width float32
+}
+
+func (r Rectangle)Area() float32 {
+	return r.length * r.width
+}
+func main() {
+   r := Rectangle{5,3}
+	q := &Square{5}
+	fmt.Println(reflect.TypeOf(q))
+	shapes := []Shaper{r,q} //这个类型是Shaper几口类型，如果不是数组的时候它是指定的数据结构。
+	for n, _ :=range shapes{
+		fmt.Println(shapes[n])
+		fmt.Println(shapes[n].Area())
+	}
+}
+说明：方法是属于结构体的，接口是定义一组方法，接口帮助结构体实现了多态的功能。如果接口中有其他的方法定义，那么想要使用这个结构的结构体必须实现全部的方法。接口的数组在最后实现的时候其实也是转变成对应的结构体然后执行结构体的方法。
+
+
+2.Go 语言多态的实现
+```go
+package main
+
+import (
+	"fmt"
+)
+
+type stockPosition struct {
+	ticker     string
+	sharePrice float32
+	count      float32
+}
+
+func (s stockPosition) getValue() float32 {
+	return s.sharePrice * s.count
+}
+
+type car struct {
+	make  string
+	model string
+	price float32
+}
+
+func (c car) getValue() float32 {
+	return c.price
+}
+
+type valuable interface {
+	getValue() float32
+}
+
+func showValue(asset valuable) {
+	fmt.Printf("Value of the asset is %f\n", asset.getValue())
+}
+
+func main() {
+	var o valuable = stockPosition{"GOOG", 577.20, 4}
+	showValue(o)
+	o = car{"BMW", "M3", 66500}
+	showValue(o)
+
+}
+```
+上面这个例子完美的实现了多态的特点。接口是可以嵌套的例如：
+```go
+type ReadWrite interface {
+    Read(b Buffer) bool
+    Write(b Buffer) bool
+}
+
+type Lock interface {
+    Lock()
+    Unlock()
+}
+
+type File interface {
+    ReadWrite
+    Lock
+    Close()
+}
+```
+3. 接口动态类型的判断
+    1.  一般采用断言的方式。
+```go
+package main
+import (
+    "fmt"
+    "math"
+)
+
+type Square struct {
+    side float32
+}
+
+type Circle struct {
+    radius float32
+}
+
+type Shaper interface {
+    Area() float32
+}
+
+func main() {
+    var areaIntf Shaper
+    sq1 := new(Square)
+    sq1.side = 5
+
+    areaIntf = sq1
+    // Is Square the type of areaIntf?
+    if t, ok := areaIntf.(*Square); ok {
+        fmt.Printf("The type of areaIntf is: %T\n", t)
+    }
+    if u, ok := areaIntf.(*Circle); ok {
+        fmt.Printf("The type of areaIntf is: %T\n", u)
+    } else {
+        fmt.Println("areaIntf does not contain a variable of type Circle")
+    }
+}
+
+func (sq *Square) Area() float32 {
+    return sq.side * sq.side
+}
+
+func (ci *Circle) Area() float32 {
+    return ci.radius * ci.radius * math.Pi
+}```
+上面的例子说明一个问题在接口类型执行的时候会根据不同的数据结构类型进行变换，然后实现多态。
+2. 可以采用类型判断的方式。
+```go
+switch t := areaIntf.(type) {
+	case *Square:
+		fmt.Printf("Type Square %T with value %v\n", t, t)
+	case *Circle:
+		fmt.Printf("Type Circle %T with value %v\n", t, t)
+	case nil:
+		fmt.Printf("nil value: nothing to check?\n")
+	default:
+		fmt.Printf("Unexpected type %T\n", t)
+	}
+```
+这样也能够直接找到动态的变量值，t变量获取了接口动态的类型和变量。%T是t的类型，%v是t的值。如果只是测试变量类型的话可以不用t变量，默认的返回值就是类型。
+常用的一段测试类型的方法：
+```go
+func classifier(items ...interface{}) {
+    for i, x := range items {
+        switch x.(type) {
+        case bool:
+            fmt.Printf("Param #%d is a bool\n", i)
+        case float64:
+            fmt.Printf("Param #%d is a float64\n", i)
+        case int, int64:
+            fmt.Printf("Param #%d is a int\n", i)
+        case nil:
+            fmt.Printf("Param #%d is a nil\n", i)
+        case string:
+            fmt.Printf("Param #%d is a string\n", i)
+        default:
+            fmt.Printf("Param #%d is unknown\n", i)
+        }
+    }
+}
+```
+4. 如何判断结构体是否实现了某些接口
