@@ -1,0 +1,30 @@
+---
+title:我的golang环境README
+tags: Go
+grammar_cjkRuby: true
+---
+
+
+## 我的golang环境README
+
+
+#### vim 篇
+  1. Plugin 'VundleVim/Vundle.vim'  //vim插件管理工具
+  2. Plugin 'fatih/vim-go' //vim go插件
+  3. Plugin 'scrooloose/nerdtree' // 文件树插件
+  4. Plugin 'Valloric/YouCompleteMe.git' //补全工具，简直神器
+  5. Plugin 'majutsushi/tagbar.git' //项目结构插件
+  6. Plugin 'kien/ctrlp.vim.git' //快速查找文件插件
+  7. Plugin 'terryma/vim-multiple-cursors.git'//多行编辑插件
+  8. Plugin 'mbbill/undotree.git'// undo 插件
+  9.  Plugin 'Lokaltog/vim-powerline.git' //状态栏插件
+#### zsh
+1. oh-my-zsh
+2. oh-my-zsh powerline 插件
+3. powerline 字体
+
+#### tmux
+1.共享粘贴：brew install reattach-to-user-namespace
+2. 鼠标模式
+
+
